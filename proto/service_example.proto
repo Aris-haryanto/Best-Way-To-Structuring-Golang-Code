@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option go_package = ".;grpc_server";
+
+package grpc_server;
+
+message RequestHello {
+    string name = 1;
+}
+
+// import "google/protobuf/any.proto";
+
+message ResponseHello {
+  int32 code = 1;
+  string message = 2;
+  bytes data = 3;
+}
+
+service GrpcServer {
+  rpc HelloWorld (RequestHello) returns (ResponseHello) {}
+}
