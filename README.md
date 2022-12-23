@@ -1,5 +1,5 @@
-> **Info**
-> This repo is a example for this article https://arisharyanto.medium.com/best-way-to-structuring-golang-code-6e619e70ce38
+> **Note**
+> This repo is a example for this article [https://arisharyanto.medium.com/best-way-to-structuring-golang-code-6e619e70ce38](https://arisharyanto.medium.com/best-way-to-structuring-golang-code-6e619e70ce38){:target="_blank"
 
 ## How to Run
 
