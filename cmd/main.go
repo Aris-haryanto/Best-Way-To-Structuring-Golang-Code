@@ -89,6 +89,13 @@ func addRoutes(r *gin.Engine, srvRest *services.RestServer) {
 		// call service method
 		srvRest.SayHello(ctx, c.Writer, c.Request)
 	})
+	r.POST("/create", func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		defer cancel()
+
+		// call service method
+		srvRest.CreateHello(ctx, c.Writer, c.Request)
+	})
 }
 
 func runHttpServer(port string, srvRest *services.RestServer) *http.Server {

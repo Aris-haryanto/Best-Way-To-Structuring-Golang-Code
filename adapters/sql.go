@@ -47,14 +47,14 @@ func SqlConnection(username string, password string, host string, port string) *
 	return db
 }
 
-func (sql *SqlDB) CloseSql() {
-	c, _ := sql.SqlConn.DB()
+func (sqldb *SqlDB) CloseSql() {
+	c, _ := sqldb.SqlConn.DB()
 	c.Close()
 }
 
-func (sql *SqlDB) SelectSomething(q *api.QuerySomething) (resp []api.ResponseSomething, err error) {
+func (sqldb *SqlDB) SelectSomething(q *api.QuerySomething) (resp []api.ResponseSomething, err error) {
 	response := []map[string]interface{}{}
-	errSql := sql.SqlConn.Model(&Hello{}).Where("name = ?", q.Name).Find(&response)
+	errSql := sqldb.SqlConn.Model(&Hello{}).Where("name = ?", q.Name).Find(&response)
 	if errSql.Error != nil {
 		return resp, errSql.Error
 	}
@@ -67,4 +67,64 @@ func (sql *SqlDB) SelectSomething(q *api.QuerySomething) (resp []api.ResponseSom
 	}
 
 	return resp, nil
+}
+
+func (sqldb *SqlDB) CreateSomething(ins *api.InsertSomething) (err error) {
+	data := Hello{
+		ID:   ins.ID,
+		Name: ins.Name,
+	}
+	tx := sqldb.SqlConn.Create(data)
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	return nil
+}
+
+// ===================
+
+type SqlDBTx struct {
+	api.IDB
+}
+
+func TxConn(db *gorm.DB) *SqlDBTx {
+	setToAdapter := &SqlDB{SqlConn: db}
+	return &SqlDBTx{setToAdapter}
+}
+
+func (sqldb *SqlDB) WrapTx(fn func(api.IDB) error) error {
+
+	// start transaction
+	tx := sqldb.SqlConn.Begin()
+
+	// triger rollback when panic recover
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	// re-initiate SqlDB struct to SqlDBTx struct only for this transaction
+	q := TxConn(tx)
+	// set struct SqlDB to closure function
+	err := fn(q)
+
+	// check if closure function error
+	if err != nil {
+		// check error when rollback
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return rbErr.Error
+		}
+
+		return err
+	}
+
+	// return commit error any of nil or not
+	return tx.Commit().Error
+
 }

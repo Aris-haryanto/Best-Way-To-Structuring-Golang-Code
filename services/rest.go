@@ -52,3 +52,30 @@ func (rest *RestServer) SayHello(ctx context.Context, w http.ResponseWriter, r *
 	w.WriteHeader(int(result.Code))
 	json.NewEncoder(w).Encode(result)
 }
+
+func (rest *RestServer) CreateHello(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	// read body request
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Error reading body: %v", err)
+		http.Error(w, "can't read body", http.StatusBadRequest)
+		return
+	}
+
+	//set header
+	w.Header().Add("Content-Type", "application/json")
+
+	// convert request body to struct
+	request := requestCreate{}
+	if err := json.Unmarshal(body, &request); err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(responseHello{Code: 500, Message: err.Error(), Data: []byte{}})
+		return
+	}
+
+	// set response
+	result, _ := rest.srvHello.CreateHello(&request)
+	w.WriteHeader(int(result.Code))
+	json.NewEncoder(w).Encode(result)
+}

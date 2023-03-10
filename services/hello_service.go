@@ -10,11 +10,11 @@ import (
 // i.e auth/middleware/calculation and many more
 
 type Hello struct {
-	db IDB
+	db api.IDB
 }
 
 // here's you should define on main.go to set what DB you use
-func (hello *Hello) SetDB(db IDB) {
+func (hello *Hello) SetDB(db api.IDB) {
 	hello.db = db
 }
 
@@ -42,4 +42,37 @@ func (hello *Hello) SaidHello(reqHello *requestHello) (responseHello, error) {
 		return responseHello{Code: 500, Message: "failed " + err.Error(), Data: []byte{}}, err
 	}
 	return responseHello{Code: 200, Message: "hello " + reqHello.Name + " with baseUrl : " + config.BaseUrl, Data: getResult}, nil
+}
+
+// here's request struct used for a function below
+type requestCreate struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+// example function with db transaction
+func (hello *Hello) CreateHello(reqCreate *requestCreate) (responseHello, error) {
+	err := hello.db.WrapTx(func(db api.IDB) error {
+		errCreateOne := db.CreateSomething(&api.InsertSomething{ID: reqCreate.ID, Name: reqCreate.Name})
+
+		if errCreateOne != nil {
+			// if error this transaction will fail and rollback
+			return errCreateOne
+		}
+
+		errCreateTwo := db.CreateSomething(&api.InsertSomething{ID: reqCreate.ID, Name: reqCreate.Name})
+
+		if errCreateTwo != nil {
+			// if error this transaction will fail and rollback
+			return errCreateTwo
+		}
+
+		// if success this transaction will auto commit
+		return nil
+	})
+
+	if err != nil {
+		return responseHello{Code: 500, Message: "failed " + err.Error(), Data: []byte{}}, err
+	}
+	return responseHello{Code: 200, Message: "hello " + reqCreate.Name + " with baseUrl : " + config.BaseUrl, Data: nil}, nil
 }
