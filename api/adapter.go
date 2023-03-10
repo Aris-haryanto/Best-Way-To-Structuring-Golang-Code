@@ -5,7 +5,10 @@ package api
 // like dave cheney said "the consumer should be define the interface"
 // this service as a consumer
 
-// for easy
+// for easy way to doing sql transact in abstraction
+// we need to move it from service to api
+// if you keep adapter.go in service that will be cycling import
+// this is not break the rule
 
 type IDB interface {
 	SelectSomething(q *QuerySomething) (resp []ResponseSomething, err error)

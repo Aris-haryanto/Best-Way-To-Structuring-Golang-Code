@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/Aris-haryanto/Best-Way-To-Structuring-Golang-Code/api"
@@ -50,6 +51,10 @@ type requestCreate struct {
 	Name string `json:"name"`
 }
 
+func (hello *Hello) failTx() (err error) {
+	return errors.New("this transaction will fail")
+}
+
 // example function with db transaction
 func (hello *Hello) CreateHello(reqCreate *requestCreate) (responseHello, error) {
 	err := hello.db.WrapTx(func(db api.IDB) error {
@@ -65,6 +70,11 @@ func (hello *Hello) CreateHello(reqCreate *requestCreate) (responseHello, error)
 		if errCreateTwo != nil {
 			// if error this transaction will fail and rollback
 			return errCreateTwo
+		}
+
+		// this tx will fail if this outside function return error
+		if errFromOther := hello.failTx(); errFromOther != nil {
+			return errFromOther
 		}
 
 		// if success this transaction will auto commit
